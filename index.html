@@ -6,9 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-    <meta name="description" content="Example Edrys module for development" />
+    <meta name="description" content="A reference module to help with development" />
     <meta name="show-in" content="*" />
-    <title>Example Module</title>
+    <title>Edrys Reference Module</title>
   
     <script src="https://raw.githubusercontent.com/edrys-org/edrys/main/module/edrys.js"></script>
  
@@ -20,13 +20,52 @@
 <body>
     <template x-if="!!edrys" x-data="{ edrys: undefined }" x-init="Edrys.onUpdate((e) => { edrys = {...e} })">
         <div>
-            <h1>Example Module</h1>
+            <h1>Edrys Reference Module</h1>
             <hr />
 
             <h2>Room Data</h2>
-            <div x-text="JSON.stringify(edrys)"></div>
+            <hr />
+            <ul>
+                <li><b>Username:</b> <code x-text="edrys.username"></code></li>
+                <li><b>User Display Name:</b><code x-text="edrys.liveUser.displayName"></code></li>
+                <li><b>Current Room:</b><code x-text="edrys.liveRoom.name"></code></li>
+                <li><b>Role:</b> <code x-text="edrys.role"></code></li>
+                <li>
+                    <b>Module Metadata:</b>
+                    <ul>
+                        <li>
+                            <b>URL:</b>
+                            <code x-text="edrys.module.url"></code>
+                        </li>
+                        <li>
+                            <b>Config:</b>
+                            <code x-text="JSON.stringify(edrys.module.config)"></code>
+                        </li>
+                        <li x-show="edrys.role == 'student'">
+                            <b>Student Config:</b>
+                            <code x-text="JSON.stringify(edrys.module.studentConfig)"></code>
+                        </li>
+                        <li x-show="edrys.role == 'teacher'">
+                            <b>Teacher Config:</b>
+                            <code x-text="JSON.stringify(edrys.module.teacherConfig)"></code>
+                        </li>
+                        <li x-show="edrys.role == 'station'">
+                            <b>Station Config:</b>
+                            <code x-text="JSON.stringify(edrys.module.stationConfig)"></code>
+                        </li>
+                        <li>
+                            <b>Module Shown In:</b>
+                            <code x-text="edrys.module.shownIn"></code>
+                        </li>
+                    </ul>
+                </li>
+                </li>
+            </ul>
 
-            <h2>Send Message</h2>
+            <h2>Room Messaging</h2>
+            <hr />
+            <h3>Send Messages</h3>
+
             <form x-data="{ subject: '' ,message: '' }" x-on:submit.prevent="Edrys.sendMessage(subject, message)">
                 <input type="text" required minlength="1" placeholder="Subject" x-model="subject" />
                 <input type="text" required minlength="1" placeholder="Body" x-model="message" />
@@ -36,17 +75,122 @@
                 </button>
             </form>
 
-            <h2>Received messages</h2>
+            <h3>Received Messages</h3>
             <div x-data="{ messages: [] }" x-init="Edrys.onMessage((m) => { messages.push(m) })">
                 <em x-show="!messages.length">No messages received yet...</em>
+
+                <template x-for="message in messages">
+                    <details>
+                        <summary>
+                            <span x-text="message.from"></span> -
+                            <span x-text="message.subject"></span>
+                        </summary>
+                        <ul>
+                            <li><b>From:</b> <code x-text="message.from"></code></li>
+                            <li><b>Subject:</b> <code x-text="message.subject"></code></li>
+                            <li><b>Body:</b> <code x-text="message.body"></code></li>
+                            <li>
+                                <b>Date Received:</b>
+                                <code x-text="new Date(message.date)"></code>
+                            </li>
+                        </ul>
+                    </details>
+                </template>
+            </div>
+
+            <h2>Room State</h2>
+            <hr />
+
+            <form x-data="{ type: 'studentPublicState', state: '' }" x-on:submit.prevent="Edrys.liveRoom[type] = state">
                 <ul>
-                    <li x-for="message in messages">
-                        <code x-text="message.from"></code> -  
-                        <code x-text="message.subject"></code> - 
-                        <code x-text="message.body"></code>
+                    <li>
+                        <b>Student Public State (can be seen and edited by students):</b>
+                        <code x-text="edrys.liveRoom.studentPublicState"></code>
+                    </li>
+                    <li>
+                        <b>Teacher Public State (can only be edited by teachers but seen
+                            by students):</b>
+                        <code x-text="edrys.liveRoom.teacherPublicState"></code>
+                    </li>
+                    <li x-show="edrys.role == 'teacher'">
+                        <b>Teacher Private State (can only be seen/edited by teachers):</b>
+                        <code x-text="edrys.liveRoom.teacherPrivateState"></code>
                     </li>
                 </ul>
-            </div>
+
+                <select x-model="type">
+                    <option value="studentPublicState">Student Public State</option>
+                    <option x-show="edrys.role == 'teacher'" value="teacherPublicState">
+                        Teacher Public State
+                    </option>
+                    <option x-show="edrys.role == 'teacher'" value="teacherPrivateState">
+                        Teacher Private State
+                    </option>
+                </select>
+
+                <input type="text" required minlength="1" placeholder="State" x-model="state" />
+                <button type="submit">
+                    <span class="oi" data-glyph="arrow-thick-bottom" aria-hidden="true"></span>
+                    Set State
+                </button>
+            </form>
+
+            <h2>Other Class Data</h2>
+            <hr />
+            <h3>Live Rooms</h3>
+            <template x-for="room in edrys.liveClass.rooms">
+                <details>
+                    <summary x-text="room.name"></summary>
+                    <ul>
+                        <li>
+                            <b>Student State:</b>
+                            <span x-text="room.studentPublicState"></span>
+                        </li>
+                        <li>
+                            <b>Teacher State:</b>
+                            <span x-text="room.teacherPublicState"></span>
+                        </li>
+                        <li x-show="edrys.role == 'teacher'">
+                            <b>Private State:</b>
+                            <span x-text="room.teacherPrivateState"></span>
+                        </li>
+                    </ul>
+                </details>
+            </template>
+
+            <h3>Live Users</h3>
+            <template x-for="user in edrys.liveClass.users">
+                <details>
+                    <summary>
+                        <em x-show="!user.name.includes('@')">Station:</em>
+                        <em x-show="user.role == 'teacher'">Teacher:</em>
+                        <em x-show="user.role == 'student'">Student:</em>
+                        <span x-text="user.displayName"></span>
+                    </summary>
+                    <ul>
+                        <li><b>Username:</b> <span x-text="user.name"></span></li>
+                        <li><b>Room:</b> <span x-text="user.room"></span></li>
+                        <li><b>Role:</b> <span x-text="user.role"></span></li>
+                        <li>
+                            <b>Date Joined:</b> <span x-text="user.dateJoined"></span>
+                        </li>
+                        <li>
+                            <b>Hand Raised:</b> <span x-text="user.handRaised"></span>
+                        </li>
+                        <li>
+                            <b>Connections:</b>
+                            <span x-text="user.connections.length"></span>
+                        </li>
+                    </ul>
+                </details>
+            </template>
+        </div>
     </template>
+    
+    <style>
+        .oi {
+            padding-right: 5px;
+        }
+    </style>
 </body>
 </html>
